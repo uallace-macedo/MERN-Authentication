@@ -4,13 +4,19 @@ import generateToken from '../utils/generateToken.js';
 import validateUserRegister from '../utils/validateUserRegister.js';
 import User from '../models/user.model.js';
 
-const test = (req, res) => {
-  res.json({ path: 'USER', status: 'OK' });
-};
+const getUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    if(user) return res.status(200).json({ success: true, user });
+    res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Erro interno no servidor ao buscar dados do usuário.' });
+  }
+}
 
 const register = async (req, res) => {
   const validation = await validateUserRegister(req);
-  if(!validation.isValid) return res.status(400).json({ message: validation.message });
+  if(!validation.isValid) return res.status(400).json({ success: false, message: validation.message });
 
   const user = validation.user;
   const { _id, name, email, role, photo, bio, isVerified } = user;
@@ -55,10 +61,17 @@ const login = async (req, res) => {
   }
 }
 
+const logout = async (req, res) => {
+  delete req.user;
+  res.clearCookie('token');
+  res.status(200).json({ success: true, message: 'Usuário deslogado com sucesso!' });
+}
+
 const UserController = {
-  test: (req, res) => test(req, res),
-  register: (req, res) => register(req, res),
-  login: (req, res) => login(req, res)
+  getUser: async (req, res) => await getUser(req, res),
+  register: async (req, res) => await register(req, res),
+  login: async (req, res) => await login(req, res),
+  logout: async (req, res) => await logout(req, res)
 }
 
 export default UserController;
