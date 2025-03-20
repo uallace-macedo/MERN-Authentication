@@ -67,11 +67,28 @@ const logout = async (req, res) => {
   res.status(200).json({ success: true, message: 'Usuário deslogado com sucesso!' });
 }
 
+const update = async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if(!user) return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+
+  try {
+    const { name, bio, photo } = req.body;
+    const updated = { $set: { name: name || user.name, bio: bio || user.bio, photo: photo || user.photo } };
+    const newUser = await User.findByIdAndUpdate(user._id, updated, { new: true }).select('-password');
+    req.user = newUser;
+
+    res.status(200).json({ newUser });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Erro interno no servidor' });
+  }
+}
+
 const UserController = {
   getUser: async (req, res) => await getUser(req, res),
   register: async (req, res) => await register(req, res),
   login: async (req, res) => await login(req, res),
-  logout: async (req, res) => await logout(req, res)
+  logout: async (req, res) => await logout(req, res),
+  update: async (req, res) => await update(req, res),
 }
 
 export default UserController;
