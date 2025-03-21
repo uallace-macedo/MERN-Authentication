@@ -17,4 +17,11 @@ const protectRoute = async (req, res, next) => {
   }
 };
 
-export default protectRoute;
+const adminRoute = async (req, res, next) => {
+  if(req.user) return res.status(401).json({ success: false, message: 'Usuário não autenticado.' });
+  if(req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'Ação não permitida.' });
+
+  next();
+}
+
+export { protectRoute, adminRoute };
